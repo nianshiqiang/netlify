@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收入计算器</title>
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.7/lunar.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            padding: 80px 20px 20px;
+            background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            font-family: Arial, sans-serif;
+            position: relative;
+            transition: background-image 1s ease-in-out;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 1;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .page-title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #F5F5DC;
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 10px 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            letter-spacing: 8px;
+        }
+
+        .calendar {
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 2px 10px rgba(139, 69, 19, 0.1);
+            width: 280px;
+            height: 280px;
+            color: #81D8D0;
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .calendar h1 {
+            margin: 0 0 10px 0;
+            font-size: 23px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 0 5px;
+        }
+
+        .calendar-header h2 {
+            font-size: 21px;
+            margin: 0;
+        }
+
+        .calendar-header .buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .calendar-header button {
+            background: none;
+            border: none;
+            color: #81D8D0;
+            font-size: 19px;
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+
+        .calendar-header button:hover {
+            background-color: rgba(129, 216, 208, 0.1);
+        }
+
+        .weekday-header {
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        .weekday-header .calendar-grid div {
+            font-size: 17px;
+            color: #81D8D0;
+            font-weight: 500;
+            padding: 3px 0;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            flex: 1;
+        }
+
+        .calendar-day {
+            text-align: center;
+            padding: 5px 3px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            min-height: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .calendar-day:hover {
+            background-color: rgba(139, 69, 19, 0.1);
+            transform: none;
+        }
+
+        .calendar-day > span {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .lunar-date {
+            font-size: 13px;
+            color: #81D8D0;
+            margin-top: 1px;
+        }
+
+        .festival {
+            font-size: 13px;
+            color: #81D8D0;
+            margin-top: 1px;
+            font-weight: 500;
+        }
+
+        .workday {
+            color: #81D8D0;
+        }
+
+        .workday .lunar-date {
+            color: #81D8D0;
+        }
+
+        .calendar-day.weekend {
+            color: #81D8D0;
+        }
+
+        .calendar-day.weekend .lunar-date {
+            color: #81D8D0;
+        }
+
+        .calendar-day.today {
+            background-color: #81D8D0;
+            color: #F5F5DC;
+        }
+
+        .calendar-day.today .lunar-date,
+        .calendar-day.today .festival {
+            color: rgba(245, 245, 220, 0.8);
+        }
+
+        .date-info {
+            text-align: right;
+            font-size: 17px;
+            color: #81D8D0;
+            padding: 5px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+
+        .calculator {
+            background-color: rgba(245, 245, 220, 0.95);
+            border-radius: 20px;
+            padding: 35px 25px;
+            box-shadow: 0 0 20px rgba(139, 69, 19, 0.2);
+            width: 500px;
+            backdrop-filter: blur(10px);
+            color: #8B4513;
+            margin: 80px auto 0;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .calculator h1 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0;
+            font-size: 32px;
+            gap: 5px;
+        }
+
+        .income-display {
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        .income-box {
+            display: inline-block;
+        }
+
+        .income-box p {
+            margin: 0;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .salary-info {
+            position: relative;
+            background-color: transparent;
+            padding: 15px 25px;
+            color: #81D8D0;
+            font-size: 26px;
+            text-align: center;
+            margin-bottom: 40px;
+            margin-top: 40px;
+            font-family: "SimHei", "Microsoft YaHei", sans-serif;
+            font-weight: bold;
+        }
+
+        .salary-info .days {
+            color: #81D8D0;
+            font-weight: bold;
+            margin: 0 5px;
+            font-size: 32px;
+        }
+
+        .update-time {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 18px;
+            color: #8B4513;
+            font-weight: bold;
+        }
+
+        .income-input-container {
+            display: none;
+        }
+
+        .income-input-button {
+            display: none;
+        }
+
+        .income-input-popup {
+            display: none;
+        }
+
+        .salary-countdown {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #8B4513;
+            font-weight: 500;
+        }
+
+        .salary-countdown .days {
+            font-size: 20px;
+            color: #FF3B30;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+
+        .calendar-day.selected {
+            background-color: rgba(129, 216, 208, 0.3);
+            color: #81D8D0;
+            font-weight: bold;
+        }
+
+        .calendar-day.selected .lunar-date,
+        .calendar-day.selected .festival {
+            color: #81D8D0;
+            font-weight: bold;
+        }
+
+        .calendar-day.today.selected {
+            background-color: #81D8D0;
+            color: #F5F5DC;
+        }
+
+        .calendar-day.today.selected .lunar-date,
+        .calendar-day.today.selected .festival {
+            color: rgba(245, 245, 220, 0.8);
+        }
+
+        .settings-buttons {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1001;
+        }
+
+        .settings-button {
+            background-color: rgba(245, 245, 220, 0.95);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: #8B4513;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 2px 10px rgba(139, 69, 19, 0.1);
+        }
+
+        .settings-button:hover {
+            background-color: rgba(245, 245, 220, 1);
+            transform: translateY(-2px);
+        }
+
+        .settings-popup {
+            display: none;
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background-color: rgba(245, 245, 220, 0.98);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(139, 69, 19, 0.2);
+            z-index: 1002;
+            backdrop-filter: blur(10px);
+            width: 200px;
+        }
+
+        .settings-popup h2 {
+            margin: 0 0 15px 0;
+            color: #8B4513;
+            font-size: 18px;
+        }
+
+        .settings-popup input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #8B4513;
+            border-radius: 4px;
+            color: #8B4513;
+        }
+
+        .settings-popup .buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .settings-popup button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .settings-popup .confirm {
+            background-color: #81D8D0;
+            color: #F5F5DC;
+        }
+
+        .settings-popup .cancel {
+            background-color: #F5F5DC;
+            color: #8B4513;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // 背景图片数组
+        const backgroundImages = [
+            'https://images.unsplash.com/photo-1506744038136-46273834b3fb?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80', // 山水风景
+            'https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80', // 日落风景
+            'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80', // 森林风景
+            'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80', // 星空风景
+            'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80', // 山川风景
+            'https://images.unsplash.com/photo-1472396961693-142e6e269027?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80', // 海滩风景
+            'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80', // 极光风景
+            'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80'  // 云海风景
+        ];
+
+        let currentImageIndex = 0;
+
+        // 切换背景图片的函数
+        function changeBackgroundImage() {
+            currentImageIndex = (currentImageIndex + 1) % backgroundImages.length;
+            document.body.style.backgroundImage = `url('${backgroundImages[currentImageIndex]}')`;
+        }
+
+        // 每10秒切换一次背景图片
+        setInterval(changeBackgroundImage, 10000);
+    </script>
+    <div class="page-title">看见你的价值</div>
+    <div class="settings-buttons">
+        <button class="settings-button" id="salaryDayBtn">设置发薪日</button>
+        <button class="settings-button" id="incomeBtn">设置月收入</button>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="settings-popup" id="salaryDayPopup">
+        <h2>设置每月发薪日</h2>
+        <input type="number" id="salaryDayInput" min="1" max="31" placeholder="请输入发薪日（1-31）">
+        <div class="buttons">
+            <button class="cancel" id="salaryDayCancel">取消</button>
+            <button class="confirm" id="salaryDayConfirm">确定</button>
+        </div>
+    </div>
+
+    <div class="settings-popup" id="incomePopup">
+        <h2>设置月收入</h2>
+        <input type="number" id="monthlyIncomeInput" placeholder="请输入月收入">
+        <div class="buttons">
+            <button class="cancel" id="incomeCancel">取消</button>
+            <button class="confirm" id="incomeConfirm">确定</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="calendar">
+            <h1>日历 <span class="date-info" id="dateInfo"></span></h1>
+            <div class="calendar-header">
+                <div class="buttons">
+                    <button id="prevMonth">&lt;</button>
+                    <button id="todayBtn">今日</button>
+                    <button id="nextMonth">&gt;</button>
+                </div>
+                <h2 id="currentMonth">2024年3月</h2>
+            </div>
+            <div class="weekday-header">
+                <div class="calendar-grid">
+                    <div>一</div>
+                    <div>二</div>
+                    <div>三</div>
+                    <div>四</div>
+                    <div>五</div>
+                    <div>六</div>
+                    <div>日</div>
+                </div>
+            </div>
+            <div class="calendar-grid" id="calendarDays"></div>
+        </div>
+
+        <div class="salary-info" id="salaryInfo"></div>
+
+        <div class="calculator">
+            <h1>本月已得牛马费 <div class="income-display">
+                <div class="income-box">
+                    <p id="monthlyIncome">¥0.00</p>
+                </div>
+            </div></h1>
+            <div class="update-time" id="updateTime"></div>
+        </div>
+    </div>
+
+    <!-- 添加隐藏的输入框 -->
+    <input type="hidden" id="yearlyIncome" value="0">
+
+    <script>
+        // 设置按钮功能
+        const salaryDayBtn = document.getElementById('salaryDayBtn');
+        const incomeBtn = document.getElementById('incomeBtn');
+        const overlay = document.getElementById('overlay');
+        const salaryDayPopup = document.getElementById('salaryDayPopup');
+        const incomePopup = document.getElementById('incomePopup');
+        const salaryDayInput = document.getElementById('salaryDayInput');
+        const monthlyIncomeInput = document.getElementById('monthlyIncomeInput');
+        const yearlyIncomeInput = document.getElementById('yearlyIncome');
+        const monthlyIncomeDisplay = document.getElementById('monthlyIncome');
+        const updateTimeDisplay = document.getElementById('updateTime');
+
+        // 从localStorage加载设置
+        let salaryDay = parseInt(localStorage.getItem('salaryDay')) || 10;
+        let monthlyIncome = parseFloat(localStorage.getItem('monthlyIncome')) || 0;
+
+        // 初始化yearlyIncome的值
+        yearlyIncomeInput.value = monthlyIncome;
+
+        function updateIncome() {
+            const monthlyIncome = parseFloat(yearlyIncomeInput.value) || 0;
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            // 获取当月天数
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
+            // 计算每天收入
+            const dailyIncome = monthlyIncome / daysInMonth;
+            
+            // 计算当前日期（从1开始）
+            const currentDay = now.getDate();
+            
+            // 计算当前时间（小时、分钟、秒）
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentSecond = now.getSeconds();
+            
+            // 计算当前可获得的收入
+            const currentIncome = dailyIncome * (currentDay - 1) + // 前几天的收入
+                                (dailyIncome / 24) * currentHour + // 今天的小时收入
+                                (dailyIncome / (24 * 60)) * currentMinute + // 今天的分钟收入
+                                (dailyIncome / (24 * 60 * 60)) * currentSecond; // 今天的秒收入
+            
+            monthlyIncomeDisplay.textContent = `¥${currentIncome.toFixed(2)}`;
+            updateTimeDisplay.textContent = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        }
+
+        // 实时更新收入显示
+        setInterval(updateIncome, 1000);
+
+        // 日历功能
+        let currentDate = new Date();
+        const calendarDays = document.getElementById('calendarDays');
+        const currentMonthDisplay = document.getElementById('currentMonth');
+        const prevMonthBtn = document.getElementById('prevMonth');
+        const nextMonthBtn = document.getElementById('nextMonth');
+
+        function updateCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            currentMonthDisplay.textContent = `${year}年${month + 1}月`;
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startingDay = firstDay.getDay();
+            // 调整起始日为周一到周日
+            const adjustedStartingDay = startingDay === 0 ? 6 : startingDay - 1;
+            
+            calendarDays.innerHTML = '';
+            
+            // 添加空白天数
+            for (let i = 0; i < adjustedStartingDay; i++) {
+                calendarDays.appendChild(createDayElement(''));
+            }
+            
+            // 添加月份天数
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dayElement = createDayElement(day);
+                if (isToday(year, month, day)) {
+                    dayElement.classList.add('today');
+                }
+                if (isWeekend(year, month, day)) {
+                    dayElement.classList.add('weekend');
+                }
+                calendarDays.appendChild(dayElement);
+            }
+        }
+
+        // 2025年法定节假日安排
+        const holidays2025 = {
+            // 元旦
+            '2025-01-01': { name: '元旦', isHoliday: true },
+            // 春节
+            '2025-01-28': { name: '春节', isHoliday: true },
+            '2025-01-29': { name: '春节', isHoliday: true },
+            '2025-01-30': { name: '春节', isHoliday: true },
+            '2025-01-31': { name: '春节', isHoliday: true },
+            '2025-02-01': { name: '春节', isHoliday: true },
+            '2025-02-02': { name: '春节', isHoliday: true },
+            '2025-02-03': { name: '春节', isHoliday: true },
+            // 清明节
+            '2025-04-04': { name: '清明节', isHoliday: true },
+            '2025-04-05': { name: '清明节', isHoliday: true },
+            '2025-04-06': { name: '清明节', isHoliday: true },
+            // 劳动节
+            '2025-05-01': { name: '劳动节', isHoliday: true },
+            '2025-05-02': { name: '劳动节', isHoliday: true },
+            '2025-05-03': { name: '劳动节', isHoliday: true },
+            '2025-05-04': { name: '劳动节', isHoliday: true },
+            '2025-05-05': { name: '劳动节', isHoliday: true },
+            // 端午节
+            '2025-06-22': { name: '端午节', isHoliday: true },
+            '2025-06-23': { name: '端午节', isHoliday: true },
+            '2025-06-24': { name: '端午节', isHoliday: true },
+            // 中秋节
+            '2025-09-29': { name: '中秋节', isHoliday: true },
+            '2025-09-30': { name: '中秋节', isHoliday: true },
+            '2025-10-01': { name: '中秋节', isHoliday: true },
+            '2025-10-02': { name: '中秋节', isHoliday: true },
+            '2025-10-03': { name: '中秋节', isHoliday: true },
+            // 国庆节
+            '2025-10-01': { name: '国庆节', isHoliday: true },
+            '2025-10-02': { name: '国庆节', isHoliday: true },
+            '2025-10-03': { name: '国庆节', isHoliday: true },
+            '2025-10-04': { name: '国庆节', isHoliday: true },
+            '2025-10-05': { name: '国庆节', isHoliday: true },
+            '2025-10-06': { name: '国庆节', isHoliday: true },
+            '2025-10-07': { name: '国庆节', isHoliday: true }
+        };
+
+        function getFestivalInfo(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            
+            // 检查是否是法定节假日
+            if (holidays2025[dateStr]) {
+                return {
+                    name: holidays2025[dateStr].name,
+                    isHoliday: true
+                };
+            }
+            
+            // 检查是否是传统节日
+            const lunar = Lunar.fromDate(date);
+            const festivals = lunar.getFestivals();
+            if (festivals && festivals.length > 0) {
+                return {
+                    name: festivals[0],
+                    isHoliday: false
+                };
+            }
+            
+            return null;
+        }
+
+        function createDayElement(day) {
+            const div = document.createElement('div');
+            div.className = 'calendar-day';
+            if (day === '') {
+                div.textContent = '';
+            } else {
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                const daySpan = document.createElement('span');
+                daySpan.textContent = day;
+                div.appendChild(daySpan);
+                
+                // 添加节日信息
+                const festivalInfo = getFestivalInfo(date);
+                if (festivalInfo) {
+                    const festival = document.createElement('div');
+                    festival.className = 'festival';
+                    festival.textContent = festivalInfo.name;
+                    div.appendChild(festival);
+                } else {
+                    // 只有在没有节日时才显示农历日期
+                    const lunar = Lunar.fromDate(date);
+                    const lunarDay = lunar.getDayInChinese();
+                    const lunarMonth = lunar.getMonthInChinese();
+                    const lunarDate = document.createElement('div');
+                    lunarDate.className = 'lunar-date';
+                    lunarDate.textContent = `${lunarMonth}月${lunarDay}`;
+                    div.appendChild(lunarDate);
+                }
+
+                // 添加点击事件
+                div.addEventListener('click', () => {
+                    const today = new Date();
+                    const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                    const diffTime = Math.abs(selectedDate - today);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    // 移除其他日期的选中状态
+                    document.querySelectorAll('.calendar-day').forEach(day => {
+                        day.classList.remove('selected');
+                    });
+                    
+                    // 添加当前日期的选中状态
+                    div.classList.add('selected');
+                    
+                    let dateInfo = '';
+                    const selectedMonth = selectedDate.getMonth() + 1;
+                    if (selectedDate > today) {
+                        dateInfo = `距离今日还有 ${diffDays} 天`;
+                    } else if (selectedDate < today) {
+                        dateInfo = `已经过去 ${diffDays} 天`;
+                    } else {
+                        dateInfo = '今天';
+                    }
+                    
+                    document.getElementById('dateInfo').textContent = dateInfo;
+                });
+            }
+            return div;
+        }
+
+        function isToday(year, month, day) {
+            const today = new Date();
+            return year === today.getFullYear() &&
+                   month === today.getMonth() &&
+                   day === today.getDate();
+        }
+
+        function isWeekend(year, month, day) {
+            const date = new Date(year, month, day);
+            const dayOfWeek = date.getDay();
+            return dayOfWeek === 0 || dayOfWeek === 6;
+        }
+
+        prevMonthBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            updateCalendar();
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            updateCalendar();
+        });
+
+        // 添加今日按钮功能
+        const todayBtn = document.getElementById('todayBtn');
+        todayBtn.addEventListener('click', () => {
+            currentDate = new Date();
+            updateCalendar();
+            document.getElementById('dateInfo').textContent = '今天';
+        });
+
+        // 计算下一个发工资日期
+        function getNextSalaryDate() {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth();
+            
+            // 获取本月设置的发薪日
+            let salaryDate = new Date(currentYear, currentMonth, salaryDay);
+            
+            // 如果发薪日是节假日，往前找最后一个工作日
+            while (isHoliday(salaryDate)) {
+                salaryDate.setDate(salaryDate.getDate() - 1);
+            }
+            
+            // 如果今天已经过了本月的发工资日，计算下个月的
+            if (today > salaryDate) {
+                salaryDate = new Date(currentYear, currentMonth + 1, salaryDay);
+                while (isHoliday(salaryDate)) {
+                    salaryDate.setDate(salaryDate.getDate() - 1);
+                }
+            }
+            
+            return salaryDate;
+        }
+
+        // 检查是否是节假日
+        function isHoliday(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            
+            // 检查是否是法定节假日
+            if (holidays2025[dateStr]) {
+                return true;
+            }
+            
+            // 检查是否是周末
+            const dayOfWeek = date.getDay();
+            return dayOfWeek === 0 || dayOfWeek === 6;
+        }
+
+        // 更新发工资倒计时
+        function updateSalaryCountdown() {
+            const nextSalaryDate = getNextSalaryDate();
+            const today = new Date();
+            const diffTime = nextSalaryDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const salaryInfo = document.getElementById('salaryInfo');
+            const nextSalaryMonth = nextSalaryDate.getMonth() + 1;
+            const nextSalaryDay = nextSalaryDate.getDate();
+            
+            if (diffDays === 0) {
+                salaryInfo.innerHTML = '今天发工资！';
+            } else {
+                salaryInfo.innerHTML = `下次发薪日：${nextSalaryMonth}月${nextSalaryDay}日，距今日还有 <span class="days">${diffDays}</span> 天`;
+            }
+        }
+
+        // 初始化
+        updateCalendar();
+        updateSalaryCountdown();
+        yearlyIncomeInput.addEventListener('input', updateIncome);
+
+        // 设置发薪日按钮点击事件
+        salaryDayBtn.addEventListener('click', () => {
+            salaryDayInput.value = salaryDay;
+            salaryDayPopup.style.display = 'block';
+            salaryDayInput.focus();
+        });
+
+        // 设置月收入按钮点击事件
+        incomeBtn.addEventListener('click', () => {
+            monthlyIncomeInput.value = monthlyIncome;
+            incomePopup.style.display = 'block';
+            monthlyIncomeInput.focus();
+        });
+
+        // 添加回车键确认功能
+        salaryDayInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const newSalaryDay = parseInt(salaryDayInput.value);
+                if (newSalaryDay >= 1 && newSalaryDay <= 31) {
+                    salaryDay = newSalaryDay;
+                    localStorage.setItem('salaryDay', salaryDay);
+                    updateSalaryCountdown();
+                }
+                salaryDayPopup.style.display = 'none';
+            }
+        });
+
+        monthlyIncomeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const newIncome = parseFloat(monthlyIncomeInput.value);
+                if (!isNaN(newIncome) && newIncome >= 0) {
+                    monthlyIncome = newIncome;
+                    localStorage.setItem('monthlyIncome', monthlyIncome);
+                    yearlyIncomeInput.value = monthlyIncome;
+                    updateIncome();
+                }
+                incomePopup.style.display = 'none';
+            }
+        });
+
+        // 点击页面其他地方关闭弹窗
+        document.addEventListener('click', (e) => {
+            if (!salaryDayPopup.contains(e.target) && !salaryDayBtn.contains(e.target)) {
+                salaryDayPopup.style.display = 'none';
+            }
+            if (!incomePopup.contains(e.target) && !incomeBtn.contains(e.target)) {
+                incomePopup.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html> 
